@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app2/Contacts.dart';
+import 'package:flutter_app2/MainProvider.dart';
 import 'package:flutter_app2/Personal.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
 
 import 'MessagePage.dart';
 
@@ -11,17 +13,27 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+    return MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MainProvider>.value(
+              value: MainProvider.getInstance()),
+        ],
+        child: MaterialApp(
+            title: 'Flutter Demo',
+            theme: ThemeData(
+              primarySwatch: Colors.blue,
+            ),
+            home: Consumer<MainProvider>(
+              builder: (context, provider, widget) {
+                return MyHomePage(title: 'Flutter Demo Home Page');
+              },
+            )));
   }
 }
 
 class MyHomePage extends StatefulWidget {
+  MainProvider provider;
+
   MyHomePage({Key key, this.title}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
@@ -41,6 +53,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  MainProvider provider;
 
   void _incrementCounter() {
     setState(() {
@@ -54,14 +67,19 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    provider = Provider.of<MainProvider>(context, listen: false);
     message = MessagePage();
-    contacts = Contacts();
     me = Personal();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        floatingActionButton: FloatingActionButton(onPressed: () {
+          print(provider.str);
+
+          provider.controller.sink.add(true);
+        }),
         appBar: AppBar(
           title: Text(widget.title),
         ),
@@ -145,6 +163,8 @@ class _MyHomePageState extends State<MyHomePage> {
   //好友页面
   Contacts contacts;
 
+  Consumer<MainProvider> consumerContacts;
+
   //我的页面
   Personal me;
 
@@ -154,13 +174,13 @@ class _MyHomePageState extends State<MyHomePage> {
       case 0:
         return message;
       case 1:
-        return contacts;
-      //暂时去掉
-//      case 2:
-//        if (explorePage == null) {
-//          explorePage = new ExplorePage();
-//        }
-//        return explorePage;
+        if (consumerContacts == null) {
+          consumerContacts =
+              Consumer<MainProvider>(builder: (context, provider, widget) {
+            return Contacts(provider);
+          });
+        }
+        return consumerContacts;
       case 2:
         return me;
       default:
